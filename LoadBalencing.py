@@ -37,7 +37,7 @@ class loadBalencing:
         for m in messages:
     
             #variables used to determine which queue message should be added to
-            prevCapacity = list[0].k_Capacity
+            prevCapacity = len(list[0])
             quickest = 0
     
             #each priority has own dedicated section of list
