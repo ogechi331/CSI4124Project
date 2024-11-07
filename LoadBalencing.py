@@ -73,12 +73,12 @@ class loadBalencing:
                 queues[quickest].addMessage(m)
         return None
 
-lst3 = [7,4,9,0]
-lst2 = [3,4,8]
-lst = [1,2]
-lstM = [lst, lst2,lst3]
-LB =loadBalencing(5, 0)
-i=0
-while i < 10:
-    LB.leastConnections(lstM, i)
-    i+=1
+#lst3 = [7,4,9,0]
+#lst2 = [3,4,8]
+#lst = [1,2]
+#lstM = [lst, lst2,lst3]
+#LB =loadBalencing(5, 0)
+#i=0
+#while i < 10:
+#    LB.leastConnections(lstM, i)
+#    i+=1
