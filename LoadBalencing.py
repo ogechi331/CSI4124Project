@@ -30,47 +30,47 @@ class loadBalencing:
             list[index].append(message)
             print(list)
 
-    #queues is array of queue
+    #list is array of queue
     #messages is array of message
-    def geolocation(self, queues, messages):
+    def geolocation(self, list, messages):
         for m in messages:
     
             #variables used to determine which queue message should be added to
-            prevCapacity = queues[0].k_Capacity
+            prevCapacity = list[0].k_Capacity
             quickest = 0
     
-            #each priority has own dedicated section of queues
-            #higher priorities have more reserved queues
+            #each priority has own dedicated section of list
+            #higher priorities have more reserved list
             #Priority 5 has 40%
             if m.priority == 5:
-                for i in range(math.floor(len(queues)*0.4)):
-                    if prevCapacity >= queues[i].size:
+                for i in range(math.floor(len(list)*0.4)):
+                    if prevCapacity >= list[i].size:
                         quickest = i
-                queues[quickest].addMessage(m)
+                list[quickest].addMessage(m)
             #Priority 4 has 20%
             elif m.priority == 4:
-                for i in range(math.floor(len(queues)*0.4), math.floor(len(queues)*0.6)):
-                    if prevCapacity >= queues[i].size:
+                for i in range(math.floor(len(list)*0.4), math.floor(len(list)*0.6)):
+                    if prevCapacity >= list[i].size:
                         quickest = i
-                queues[quickest].addMessage(m)
+                list[quickest].addMessage(m)
             #Priority 3 has 20%
             elif m.priority == 3:
-                for i in range(math.floor(len(queues)*0.6), math.floor(len(queues)*0.8)):
-                    if prevCapacity >= queues[i].size:
+                for i in range(math.floor(len(list)*0.6), math.floor(len(list)*0.8)):
+                    if prevCapacity >= list[i].size:
                         quickest = i
-                queues[quickest].addMessage(m)
+                list[quickest].addMessage(m)
             #Priority 2 has 10%
             elif m.priority == 2:
-                for i in range(math.floor(len(queues)*0.8), math.floor(len(queues)*0.9)):
-                    if prevCapacity >= queues[i].size:
+                for i in range(math.floor(len(list)*0.8), math.floor(len(list)*0.9)):
+                    if prevCapacity >= list[i].size:
                         quickest = i
-                queues[quickest].addMessage(m)
+                list[quickest].addMessage(m)
             #Priority 1 has 10%
             else:
-                for i in range(math.floor(len(queues)*0.9), math.floor(len(queues))):
-                    if prevCapacity >= queues[i].size:
+                for i in range(math.floor(len(list)*0.9), math.floor(len(list))):
+                    if prevCapacity >= list[i].size:
                         quickest = i
-                queues[quickest].addMessage(m)
+                list[quickest].addMessage(m)
         return None
 
 #lst3 = [7,4,9,0]
