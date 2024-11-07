@@ -1,3 +1,4 @@
+import math
 class loadBalencing:
     def __init__(self, length, prev):
         self.maxLen = length
