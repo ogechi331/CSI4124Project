@@ -46,30 +46,35 @@ class loadBalencing:
                 for i in range(math.floor(len(list)*0.4)):
                     if prevCapacity >= list[i].size:
                         quickest = i
+                        prevCapacity = list[i].size
                 list[quickest].addMessage(m)
             #Priority 4 has 20%
             elif m.priority == 4:
                 for i in range(math.floor(len(list)*0.4), math.floor(len(list)*0.6)):
                     if prevCapacity >= list[i].size:
                         quickest = i
+                        prevCapacity = list[i].size
                 list[quickest].addMessage(m)
             #Priority 3 has 20%
             elif m.priority == 3:
                 for i in range(math.floor(len(list)*0.6), math.floor(len(list)*0.8)):
                     if prevCapacity >= list[i].size:
                         quickest = i
+                        prevCapacity = list[i].size
                 list[quickest].addMessage(m)
             #Priority 2 has 10%
             elif m.priority == 2:
                 for i in range(math.floor(len(list)*0.8), math.floor(len(list)*0.9)):
                     if prevCapacity >= list[i].size:
                         quickest = i
+                        prevCapacity = list[i].size
                 list[quickest].addMessage(m)
             #Priority 1 has 10%
             else:
                 for i in range(math.floor(len(list)*0.9), math.floor(len(list))):
                     if prevCapacity >= list[i].size:
                         quickest = i
+                        prevCapacity = list[i].size
                 list[quickest].addMessage(m)
         return None
 
