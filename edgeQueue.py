@@ -19,12 +19,6 @@ class EdgeQueue:
         return len(self.queue) < self.capacity
 
     def removeMessage(self, current_time):
-        departing = []
-        for i in range(0, len(self.queue)):
-            next_departure = self.queue[0]
-            if next_departure.cloud_departure_time <= current_time:
-                depart = heapq.heappop(self.queue)
-                departing.append(depart)
-            else:
-                break
-        return departing
+        if self.queue and self.queue[0].departure_time <= current_time:
+            return self.queue.pop(0)
+        return None
