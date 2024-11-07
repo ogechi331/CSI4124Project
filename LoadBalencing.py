@@ -30,6 +30,49 @@ class loadBalencing:
             list[index].append(message)
             print(list)
 
+    #queues is array of queue
+    #messages is array of message
+    def geolocation(queues, messages):
+        for m in messages:
+    
+            #variables used to determine which queue message should be added to
+            prevCapacity = queues[0].k_Capacity
+            quickest = 0
+    
+            #each priority has own dedicated section of queues
+            #higher priorities have more reserved queues
+            #Priority 5 has 40%
+            if m.priority == 5:
+                for i in range(math.floor(len(queues)*0.4)):
+                    if prevCapacity >= queues[i].size:
+                        quickest = i
+                queues[quickest].addMessage(m)
+            #Priority 4 has 20%
+            elif m.priority == 4:
+                for i in range(math.floor(len(queues)*0.4), math.floor(len(queues)*0.6)):
+                    if prevCapacity >= queues[i].size:
+                        quickest = i
+                queues[quickest].addMessage(m)
+            #Priority 3 has 20%
+            elif m.priority == 3:
+                for i in range(math.floor(len(queues)*0.6), math.floor(len(queues)*0.8)):
+                    if prevCapacity >= queues[i].size:
+                        quickest = i
+                queues[quickest].addMessage(m)
+            #Priority 2 has 10%
+            elif m.priority == 2:
+                for i in range(math.floor(len(queues)*0.8), math.floor(len(queues)*0.9)):
+                    if prevCapacity >= queues[i].size:
+                        quickest = i
+                queues[quickest].addMessage(m)
+            #Priority 1 has 10%
+            else:
+                for i in range(math.floor(len(queues)*0.9), math.floor(len(queues))):
+                    if prevCapacity >= queues[i].size:
+                        quickest = i
+                queues[quickest].addMessage(m)
+        return
+
 lst3 = [7,4,9,0]
 lst2 = [3,4,8]
 lst = [1,2]
