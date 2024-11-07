@@ -32,7 +32,7 @@ class loadBalencing:
 
     #queues is array of queue
     #messages is array of message
-    def geolocation(queues, messages):
+    def geolocation(self, queues, messages):
         for m in messages:
     
             #variables used to determine which queue message should be added to
@@ -71,7 +71,7 @@ class loadBalencing:
                     if prevCapacity >= queues[i].size:
                         quickest = i
                 queues[quickest].addMessage(m)
-        return
+        return None
 
 lst3 = [7,4,9,0]
 lst2 = [3,4,8]
