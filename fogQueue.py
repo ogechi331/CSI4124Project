@@ -33,6 +33,5 @@ class fogQueue():
             if next_departure.fog_departure_time <= current_time:
                 depart = heapq.heappop(self.queue)
                 departing.append(depart)
-            else:
-                break
+        
         return departing
