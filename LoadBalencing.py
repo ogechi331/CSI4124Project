@@ -20,16 +20,19 @@ class loadBalencing:
             print(list)
 
     def leastConnections(self, list, message):
-        least = self.maxLen
+        len_lst = []
         index = 0
         for i in range(len(list)):
+            len_lst.append(len(list[i]))
+
+        least = len_lst[0]
+        for i in range(len(len_lst)):
             if len(list[i])< least:
                 least = len(list[index])
                 index = i
 
-        if len(list[index]) < self.maxLen:
-            list[index].append(message)
-            print(list)
+        list[index].append(message)
+        print(list)
 
     #list is array of queue
     #messages is array of message
