@@ -1,23 +1,15 @@
 import math
 class loadBalencing:
-    def __init__(self, length, prev):
-        self.maxLen = length
+    def __init__(self, prev):
         self.prev = prev
 
     def roundRobin(self, list, message):
-        if len(list[self.prev]) >= self.maxLen:
-            if self.prev == (len(list) - 1):
-                self.prev = 0
-            else:
-                self.prev+=1
-            return
+        list[self.prev].append(message)
+        if self.prev == (len(list) - 1):
+            self.prev = 0
         else:
-            list[self.prev].append(message)
-            if self.prev == (len(list) - 1):
-                self.prev = 0
-            else:
-                self.prev+=1
-            print(list)
+            self.prev+=1
+        print(list)
 
     def leastConnections(self, list, message):
         len_lst = []
