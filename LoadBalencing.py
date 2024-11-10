@@ -19,8 +19,8 @@ class loadBalencing:
 
         least = len_lst[0]
         for i in range(len(len_lst)):
-            if len(list[i])< least:
-                least = len(list[index])
+            if len_lst[i]< least:
+                least = len_lst[i]
                 index = i
 
         list[index].append(message)
