@@ -4,7 +4,7 @@ class loadBalencing:
         self.prev = prev
 
     def roundRobin(self, list, message):
-        list[self.prev].add(message)
+        list[self.prev].addMessage(message)
         if self.prev == (len(list) - 1):
             self.prev = 0
         else:
@@ -23,7 +23,7 @@ class loadBalencing:
                 least = len_lst[i]
                 index = i
 
-        list[index].add(message)
+        list[index].addMessage(message)
         print(list)
 
     #list is array of queue
@@ -79,12 +79,4 @@ class loadBalencing:
                 list[quickest].addMessage(m)
         return None
 
-#lst3 = [7,4,9,0]
-#lst2 = [3,4,8]
-#lst = [1,2]
-#lstM = [lst, lst2,lst3]
-#LB =loadBalencing(5, 0)
-#i=0
-#while i < 10:
-#    LB.leastConnections(lstM, i)
-#    i+=1
+
