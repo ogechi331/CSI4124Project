@@ -1,6 +1,8 @@
 class Message:
-    def __init__(self, current_departure_time, fog_departure_time=None, cloud_arrival_time=None,
-                 cloud_service_time=None,
+    def __init__(self, current_departure_time, 
+                 edge_arrival_time = None, edge_service_time = None, edge_wait_time = None, edge_departure_time = None, 
+                 fog_arrival_time = None, fog_service_time = None, fog_wait_time = None, fog_departure_time=None, 
+                 cloud_arrival_time=None,cloud_service_time=None,
                  cloud_wait_time=None, cloud_departure_time=None):
         # Need to add the rest of the parameters
 
