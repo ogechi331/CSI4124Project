@@ -1,5 +1,8 @@
+import random
+
+
 class Message:
-    def __init__(self, edge_arrival_time, current_departure_time=None, priority=None,
+    def __init__(self, edge_arrival_time, current_departure_time=None,
                  edge_service_time=None, edge_wait_time=None, edge_departure_time=None,
                  fog_arrival_time=None, fog_service_time=None, fog_wait_time=None, fog_departure_time=None,
                  cloud_arrival_time=None, cloud_service_time=None,
@@ -7,7 +10,7 @@ class Message:
         # Need to add the rest of the parameters
 
         self.current_departure_time = current_departure_time
-        self.priority = priority
+        self.priority = random.randint(0, 5)
 
         self.edge_arrival_time = edge_arrival_time
         self.edge_service_time = edge_service_time
