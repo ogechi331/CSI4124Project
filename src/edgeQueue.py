@@ -20,7 +20,7 @@ class EdgeQueue:
             # message.wait_time = current_time  # Assuming wait time is calculated as current_time
 
             message.edge_service_time = np.random.exponential(self.serviceRate)
-            message.edge_departure_time= message.edge_arrival_time + message.edge_service_time + message.edge_wait_time  # Set departure time based on processing time
+            message.edge_departure_time = message.edge_arrival_time + message.edge_service_time + message.edge_wait_time  # Set departure time based on processing time
             # ensure the messages are ordered from lowest to greatest departure when adding messages
             message.current_departure_time = message.edge_departure_time
             heapq.heappush(self.eventList, message)
@@ -39,7 +39,7 @@ class EdgeQueue:
             if self.eventList[0].edge_departure_time <= current_time:
                 self.queue.append(heapq.heappop(self.eventList))
         for i in range(0, len(self.queue)):
-            if (self.queue[0].edge_departure_time <= current_time):
+            if self.queue[0].edge_departure_time >= current_time:
                 departing.append(self.edge_departure_time.pop(0))
         return departing
 

@@ -1,31 +1,37 @@
-import numpy as np
+import enum
 import heapq
+
 import Message
 
 
-# Creates one Fog Queue that has multiple servers
+class DelayType(enum.Enum):
+    edgeToFog = 1
+    fogToCloud = 2
 
-class fogQueue():
+
+class DelayQueue:
     """
     A class that creates an M/M/n/inf queue with exponentially distributed service time
     """
+
     n_servers: int  # number of servers accepting customers from the queue
-    service_time: np.random.default_rng  # specifies the numpy method used to generate the random numbers
+    delay_time: float  # specifies the numpy method used to generate the random numbers
     service_time_mean: float  # the mean of the exponential distribution used to calculate the service time
     processed: list  # a list of all customers that have been processed by the servers
     event_list: list  # a list that corresponds to the number of customers being served
 
-    def __init__(self, n_servers: int, service_time_mean: float, service_time=np.random.default_rng(), processed=[],
+    def __init__(self, n_servers: int, service_time_mean: float, delayTime: float, processed=[],
                  event_list=[]):
         self.n_servers = n_servers
-        self.service_time = service_time
+        self.service_time = delayTime
         self.service_time_mean = service_time_mean
         self.processed = processed
         self.event_list = event_list
+        self.type = type
 
     def addMessage(self, message: Message) -> None:
-        # calculates the message's service time using an exponential distribution with the queue's mean service time
-        message.fog_service_time = self.service_time.exponential(self.service_time_mean)
+        # calculates the message's service time which is the
+        message.fog_service_time = self.service_time
 
         ########Calculation of Wait Time ##########
 
@@ -59,6 +65,3 @@ class fogQueue():
                 departing.append(self.processed.pop(0))
 
         return departing
-
-    def __len__(self):
-        return len(self.event_list) + len(self.processed)

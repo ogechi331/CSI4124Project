@@ -1,23 +1,47 @@
-import edgeQueue as edge
-import Message as mess
+import enum
 import heapq
 import numpy as np
+import CloudQueue
+import LoadBalencing
+import edgeQueue as edge
+import fogQueue
+
+
+class LoadBalancingType(enum.Enum):
+    RoundRobin = 1
+    LeastConnections = 2
+    GeoLocation = 3
 
 
 def main():
-    global dropout
-    dropout = 0
-    simulation_time = 0
+    # User parameters Begins
+    time_step = 1
     end_time = 10000
     n_edgeServers = 3
     edgeArrivalRates = [5, 5, 5]
     edgeCapacities = [10, 10, 10]
     edgeServiceRates = [10, 10, 10]
     edgeDelay = [.05, .05, .05]
+    fogDelayTime = 0.05
+    n_fogServers = [3, 3, 3]
+    n_fogQueues = 3
+    fogServiceRates = [10, 10, 10]
+    n_cloudServers = 4
+    cloudServiceRate = 10
+    loadbalancingtype = 1
+    # End User Parameters
+    balance = LoadBalencing.LoadBalencing(0)
+    dropout = 0
+    simulation_time = 0
     edgeQueuesList = []
-    edgeDelayQueue = []*n_edgeServers
+    edgeDelayQueue = [] * n_edgeServers
+    fogDelayQueue = []
+    fogQueueList = []
+    cloudExitMessageList = []
+    cloudQueue = CloudQueue.CloudQueue(n_cloudServers, cloudServiceRate)
+
     # List of scheduled arrivals for Edge queues stored in tuple
-    # tuple of form : (nextEdgeArrivalTime, edgeServer_id)
+    #  of form : (nextEdgeArrivalTime, edgeServer_id)
     nextEdgeArrival = []
     # construct a list of edge server queues and determine the message arrival based on inter-arrival generated from
     # exponential distribution
@@ -27,6 +51,9 @@ def main():
 
         # poisson or exponential?
         nextEdgeArrival.append((np.random.exponential(1 / edgeArrivalRates[i]), i))
+
+    for i in range(0, n_fogQueues):
+        fogQueueList.append(fogQueue.fogQueue(n_fogServers[i], fogServiceRates[i]))
 
     heapq.heapify(edgeQueuesList)
     heapq.heapify(nextEdgeArrival)
@@ -44,30 +71,57 @@ def main():
                     if edgeQueuesList[i][0].addMessage(simulation_time):
                         dropout += 1
                     # replace the min arrival with the next generated arrival time. Heap will auto balance itself
-                    heapq.heapreplace(nextEdgeArrival, (np.random.exponential(1 / edgeArrivalRates[server_id]), server_id))
+                    heapq.heapreplace(nextEdgeArrival,
+                                      (np.random.exponential(1 / edgeArrivalRates[server_id]), server_id))
 
         # handle message departing at current simulation time
-        flag1 = False
         for item in edgeQueuesList:
-            message = item[0].removeMessage(simulation_time)
-            if flag1 and (message is None):
-                # the minimum departure is greater than the simulation, so we exit the for loop
-                break
+            messages = item[0].removeMessage(simulation_time)
+            if messages:
+                for i in range(0, len(messages)):
+                    messages[i].incrementDeparture(edgeDelay[item[1]])
+                    edgeDelayQueue[item[1]].append(messages[i])
+
+        # handle Messages leaving edge Delay Queue and use Load Balancing to add them to fog
+        for item in edgeDelayQueue:
+            messages = item.removeMessage(simulation_time)
+            if messages:
+                #use Load Balancing to add to fog queue
+                if loadbalancingtype == LoadBalancingType.RoundRobin:
+                    for i in range(0, len(messages)):
+                        balance.roundRobin(fogQueueList, messages[i])
+                elif loadbalancingtype == LoadBalancingType.LeastConnections:
+                    for i in range(0, len(messages)):
+                        balance.leastConnections(fogQueueList, messages[i])
+                elif loadbalancingtype == LoadBalancingType.GeoLocation:
+                    #TODO: implement priority to messages
+                    balance.geolocation(fogQueueList, messages)
             else:
-                # add the message to the correct delay queue
-                message.incrementDeparture(edgeDelay[item[1]])
-                edgeDelayQueue[item[1]].append(message)
+                continue
 
-            # continue to remove messages from a given edge Queue while allowed since messages could have the same
-            # departure time
-            while True:
-                message = item[0].removeMessage(simulation_time)
-                if message is None:
-                    break
-                message.incrementDeparture(edgeDelay[item[1]])
-                edgeDelayQueue[item[1]].append(message)
-                flag1 = True
+        # handle Messages departing fog Queue and add them to fog Delay Queue
 
+        for item in fogQueueList:
+            messages = item.removeMessage(simulation_time)
+            if messages:
+                for i in range(0, len(messages)):
+                    messages[i].incrementDeparture(fogDelayTime)
+                    heapq.heappush(fogDelayQueue, messages[i])
 
+        # handle messages departing fog Delay
+        while True:
+            if fogDelayQueue[0].current_departure_time >= simulation_time:
+                cloudQueue.addMessage(heapq.heappop(fogDelayQueue))
+            else:
+                # no more messages that can leave (departure time of remaining messages > current simulation time), break out of while loop
+                break
 
-        simulation_time += 1
+        # Return list of all messages exiting cloud
+        messages = cloudQueue.removeMessage(simulation_time)
+        if messages:
+            for i in range(0, len(messages)):
+                cloudExitMessageList.append(messages[i])
+
+        simulation_time += time_step
+
+    return cloudExitMessageList
