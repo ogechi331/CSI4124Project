@@ -63,12 +63,12 @@ def main():
 
         # handle message arriving at current simulation time
         if nextEdgeArrival[0][0] >= simulation_time:
-            server_id = edgeQueuesList[0][1]
+            server_id = nextEdgeArrival[0][1]
 
             # find where the corresponding edge Queue for the message currently is in the min heap
             for i in range(0, len(edgeQueuesList)):
                 if edgeQueuesList[i][1] == server_id:
-                    if edgeQueuesList[i][0].addMessage(simulation_time):
+                    if not edgeQueuesList[i][0].addMessage(simulation_time):
                         dropout += 1
                     # replace the min arrival with the next generated arrival time. Heap will auto balance itself
                     heapq.heapreplace(nextEdgeArrival,
@@ -83,10 +83,9 @@ def main():
                     edgeDelayQueue[item[1]].append(messages[i])
 
         # handle Messages leaving edge Delay Queue and use Load Balancing to add them to fog
-        for item in edgeDelayQueue:
-            messages = item.removeMessage(simulation_time)
+        for messages in edgeDelayQueue:
             if messages:
-                #use Load Balancing to add to fog queue
+                # use Load Balancing to add to fog queue
                 if loadbalancingtype == LoadBalancingType.RoundRobin:
                     for i in range(0, len(messages)):
                         balance.roundRobin(fogQueueList, messages[i])
@@ -94,7 +93,7 @@ def main():
                     for i in range(0, len(messages)):
                         balance.leastConnections(fogQueueList, messages[i])
                 elif loadbalancingtype == LoadBalancingType.GeoLocation:
-                    #TODO: implement priority to messages
+                    # TODO: implement priority to messages
                     balance.geolocation(fogQueueList, messages)
             else:
                 continue
@@ -110,7 +109,7 @@ def main():
 
         # handle messages departing fog Delay
         while True:
-            if fogDelayQueue[0].current_departure_time >= simulation_time:
+            if fogDelayQueue and fogDelayQueue[0].current_departure_time >= simulation_time:
                 cloudQueue.addMessage(heapq.heappop(fogDelayQueue))
             else:
                 # no more messages that can leave (departure time of remaining messages > current simulation time), break out of while loop
@@ -125,3 +124,6 @@ def main():
         simulation_time += time_step
 
     return cloudExitMessageList
+
+
+main()

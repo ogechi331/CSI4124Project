@@ -49,7 +49,7 @@ class CloudQueue():
         departing = []  # a list that contains all messages that left the system between the previous and current time interval
 
         for i in range(0, self.n_servers):
-            if self.event_list[0].cloud_departure_time <= current_time:
+            if self.event_list and self.event_list[0].cloud_departure_time <= current_time:
                 self.processed.append(heapq.heappop(self.event_list))
 
         for i in range(0, len(self.processed)):

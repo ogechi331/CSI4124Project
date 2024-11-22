@@ -1,6 +1,8 @@
 import heapq
 import numpy as np
 
+import Message
+
 
 class EdgeQueue:
     def __init__(self, capacity, serviceRate):
@@ -9,8 +11,8 @@ class EdgeQueue:
         self.queue = []  # List to hold messages in the
         self.serviceRate = serviceRate
 
-    def addMessage(self, message):
-
+    def addMessage(self, time):
+        message = Message.Message(time)
         if self.checkCapacity():
             if len(self.queue) > 0:
                 message.edge_wait_time = (self.queue[0] - message.edge_arrival_time) 
@@ -40,8 +42,41 @@ class EdgeQueue:
                 self.queue.append(heapq.heappop(self.eventList))
         for i in range(0, len(self.queue)):
             if self.queue[0].edge_departure_time >= current_time:
-                departing.append(self.edge_departure_time.pop(0))
+                departing.append(self.queue.pop(0))
         return departing
+
+    def __gt__(self, other):
+        """Compare two EdgeQueue objects based on the next message's departure time."""
+        if not other.queue:
+            return True
+        elif not self.queue:
+            return False
+
+        return self.queue[0] > other.queue[0]
+
+    def __lt__(self, other):
+        """Compare two EdgeQueue objects based on the next message's departure time."""
+        if not other.queue:
+            return True
+        elif not self.queue:
+            return False
+        return self.queue[0] < other.queue[0]
+
+    def __ge__(self, other):
+        """Compare two EdgeQueue objects based on the next message's departure time."""
+        if not other.queue:
+            return True
+        elif not self.queue:
+            return False
+        return self.queue[0] >= other.queue[0]
+
+    def __le__(self, other):
+        """Compare two EdgeQueue objects based on the next message's departure time."""
+        if not other.queue:
+            return True
+        elif not self.queue:
+            return False
+        return self.queue[0] <= other.queue[0]
 
         '''
     def removeMessage(self, current_time):

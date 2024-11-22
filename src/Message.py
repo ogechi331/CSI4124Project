@@ -1,6 +1,6 @@
 class Message:
-    def __init__(self, current_departure_time, priority=None,
-                 edge_arrival_time=None, edge_service_time=None, edge_wait_time=None, edge_departure_time=None,
+    def __init__(self, edge_arrival_time, current_departure_time=None, priority=None,
+                 edge_service_time=None, edge_wait_time=None, edge_departure_time=None,
                  fog_arrival_time=None, fog_service_time=None, fog_wait_time=None, fog_departure_time=None,
                  cloud_arrival_time=None, cloud_service_time=None,
                  cloud_wait_time=None, cloud_departure_time=None):
