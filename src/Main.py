@@ -93,7 +93,6 @@ def main():
                     for i in range(0, len(messages)):
                         balance.leastConnections(fogQueueList, messages[i])
                 elif loadbalancingtype == LoadBalancingType.GeoLocation:
-                    # TODO: implement priority to messages
                     balance.geolocation(fogQueueList, messages)
             else:
                 continue
