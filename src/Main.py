@@ -7,6 +7,7 @@ import edgeQueue as edge
 import fogQueue
 
 import matplotlib.pyplot as plt
+import scipy.stats as st
 
 
 class LoadBalancingType(enum.Enum):
@@ -17,10 +18,10 @@ class LoadBalancingType(enum.Enum):
 
 def main():
     # User parameters Begins
-    time_step = 0.01 #ms
+    time_step = 0.05 #ms
     end_time = 5000 #ms (will check if reached steady state)
     n_edgeServers = 6
-    edgeArrivalRates = [0.01,0.01,0.01,0.01,0.01,0.01] #this is the value that will change with each test
+    edgeArrivalRates = [0.05,0.05,0.05,0.05,0.05,0.05] #this is the value that will change with each test
     edgeCapacities = [50,50,50,50,50,50]
     edgeServiceRates = [5,5,5,5,5,5]
     edgeDelay = [.05, .05, .05, 0.05, 0.05]
@@ -30,7 +31,7 @@ def main():
     fogServiceRates = [30,30]
     n_cloudServers = 4 #what about number of queues? assumes 1 queue (which is right according to the paper)
     cloudServiceRate = 50
-    loadbalancingtype = 1
+    loadbalancingtype = 3 #reprsentative of loadbalancing type
     # End User Parameters
     balance = LoadBalencing.LoadBalencing(0)
     dropout = 0
@@ -97,9 +98,9 @@ def main():
                         balance.roundRobin(fogQueueList, messages.pop(0))
                 elif loadbalancingtype == LoadBalancingType.LeastConnections.value:
                     for i in range(0, len(messages)):
-                        balance.leastConnections(fogQueueList, messages[i])
+                        balance.leastConnections(fogQueueList, messages.pop(0))
                 elif loadbalancingtype == LoadBalancingType.GeoLocation.value:
-                    balance.geolocation(fogQueueList, messages)
+                    balance.geolocation(fogQueueList, messages.pop(0))
             else:
                 continue
 
@@ -129,14 +130,26 @@ def main():
         
         simulation_time += time_step
 
-    return cloudExitMessageList
+    return cloudExitMessageList, dropout
 
 
-messages = main()
+total_time = 5000
+edge_queues = 6
+fog_queues = 2
+cloud_queues = 1
 
-print(len(messages))
+i = 5
+test = "GeoLocating"
+arrival_rate = 0.05
+
+messages, dropout = main()
+
+
 
 system_time = []
+edge_response_time = []
+fog_response_time = []
+cloud_response_time = []
 
 edge_arrival_time = []
 edge_service_time = []
@@ -152,6 +165,10 @@ cloud_arrival_time = []
 cloud_service_time = []
 cloud_wait_time = []
 cloud_departure_time = []
+
+total_edge_service_time = 0
+total_fog_service_time = 0
+total_cloud_service_time = 0
 
 for message in messages:
     edge_arrival_time.append(message.edge_arrival_time)
@@ -170,17 +187,136 @@ for message in messages:
     cloud_departure_time.append(message.cloud_departure_time)
 
     system_time.append(message.cloud_departure_time - message.edge_arrival_time)
+    edge_response_time.append(message.edge_departure_time - message.edge_arrival_time)
+    fog_response_time.append(message.fog_departure_time - message.fog_arrival_time)
+    cloud_response_time.append(message.cloud_departure_time - message.cloud_arrival_time)
+
+    total_edge_service_time += message.edge_service_time
+    total_fog_service_time += message.fog_service_time
+    total_cloud_service_time += message.cloud_service_time
 
 #now calculate all the statistics
 """
 What to calculate:
-    1. determine system time (look for when this stabilizes)
-    1. determine when cloud departure time stabilizes (plot cloud departure time as histogram?)
-    2. average cloud departure time (graph)
+    1. determine system time (look for when this stabilizes) - no clear stabilization (probably because the single cloud wait is insignificant)
+    2. mean response time of: (+ their confidence intervals and prediction intervals)
+        a) edge
+        b) fog
+        c) cloud
+    3. utilization of:
+        a) edge
+        b) fog
+        c) cloud
+    4. dropout averaged over system time
+    5. Throughput (messages passed over system time)
 """
 
-#cloud departure stabilization - plot the cloud departure by time
-plt.hist(system_time)
-plt.show()
+#1. average system time + confidence interval + prediction interval
+average_system_time = np.mean(system_time)
+
+
+t_value = st.t.ppf(0.95, len(system_time)-1)
+sd_system_time = np.std(system_time, ddof=1)
+
+system_time_CI = (average_system_time-t_value*sd_system_time/np.sqrt(len(system_time)), average_system_time+t_value*sd_system_time/np.sqrt(len(system_time)))
+
+system_time_PI = (average_system_time - t_value*sd_system_time*np.sqrt(1 + (1/len(system_time))), average_system_time + t_value*sd_system_time*np.sqrt(1 + (1/len(system_time))))
+
+#2. mean response time
+
+##a) edge
+average_edge_time = np.mean(edge_response_time)
+
+
+
+t_value = st.t.ppf(0.95, len(edge_response_time)-1)
+sd_edge_time = np.std(edge_response_time)
+
+edge_time_CI = (average_edge_time-t_value*sd_edge_time/np.sqrt(len(edge_response_time)), average_edge_time+t_value*sd_edge_time/np.sqrt(len(edge_response_time)))
+
+edge_time_PI = (average_edge_time - t_value*sd_edge_time*np.sqrt(1 + (1/len(edge_response_time))), average_edge_time + t_value*sd_edge_time*np.sqrt(1 + (1/len(edge_response_time))))
+
+##b) fog
+average_fog_time = np.mean(fog_response_time)
+
+
+
+t_value = st.t.ppf(0.95, len(fog_response_time)-1)
+sd_fog_time = np.std(fog_response_time)
+
+fog_time_CI = (average_fog_time-t_value*sd_fog_time/np.sqrt(len(fog_response_time)), average_fog_time+t_value*sd_fog_time/np.sqrt(len(fog_response_time)))
+fog_time_PI = (average_fog_time - t_value*sd_fog_time*np.sqrt(1 + (1/len(fog_response_time))), average_fog_time + t_value*sd_fog_time*np.sqrt(1 + (1/len(fog_response_time))))
+
+##c) cloud
+average_cloud_time = np.mean(cloud_response_time)
+
+t_value = st.t.ppf(0.95, len(cloud_response_time)-1)
+sd_cloud_time = np.std(cloud_response_time)
+
+cloud_time_CI = (average_cloud_time-t_value*sd_cloud_time/np.sqrt(len(cloud_response_time)), average_cloud_time+t_value*sd_cloud_time/np.sqrt(len(cloud_response_time)))
+cloud_time_PI = (average_cloud_time - t_value*sd_cloud_time*np.sqrt(1 + (1/len(cloud_response_time))), average_cloud_time + t_value*sd_cloud_time*np.sqrt(1 + (1/len(cloud_response_time))))
+
+
+# Utilization
+
+edge_utilization = total_edge_service_time/(edge_queues*total_time)
+fog_utilization = total_fog_service_time/(fog_queues*total_time)
+cloud_utilization = total_cloud_service_time/(cloud_queues*total_time)
+
+#Dropout
+
+average_dropout = dropout/total_time
+
+#Throughput
+average_throughput = len(messages)/total_time
+
+
+#save data to .csv
+import pandas as pd
+
+data = pd.DataFrame({
+    "edge arrival time": edge_arrival_time,
+    "edge wait time": edge_wait_time,
+    "edge service time": edge_service_time,
+    "edge departure time": edge_departure_time,
+    "fog arrival time": fog_arrival_time,
+    "fog wait time": fog_wait_time,
+    "fog service time": fog_service_time,
+    "fog departure time": fog_departure_time,
+    "cloud arrival time": cloud_arrival_time,
+    "cloud wait time": cloud_wait_time,
+    "cloud service time": cloud_service_time,
+    "cloud departure time": cloud_departure_time,
+
+    
+})
+
+calculations = pd.DataFrame({
+
+    "MRT system": [average_system_time],
+    "C.I MRT system": [system_time_CI],
+    "P.I MRT system": [system_time_PI],
+
+    "MRT edge": [average_edge_time],
+    "C.I MRT edge": [edge_time_CI],
+    "P.I MRT edge": [edge_time_PI],
+
+    "MRT fog": [average_fog_time],
+    "C.I MRT fog": [fog_time_CI],
+    "P.I MRT fog": [fog_time_PI],
+
+    "MRT cloud": [average_cloud_time],
+    "C.I MRT cloud": [cloud_time_CI],
+    "P.I MRT cloud": [cloud_time_PI],
+
+    "dropout per time": [average_dropout],
+    "throughput per time": [average_throughput],
+
+    "arrival rate": [arrival_rate]
+})
+
+
+data.to_csv("raw data from " + test + " arrival rate " + str(arrival_rate) +" trial " + str(i) + ".csv")
+calculations.to_csv("calculation data from " + test + " arrival rate " + str(arrival_rate)+ " trial " + str(i) + ".csv")
 
 
