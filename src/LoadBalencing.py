@@ -14,7 +14,7 @@ class LoadBalencing:
             self.prev = 0
         else:
             self.prev += 1
-        print(queuelist)
+        #print(queuelist)
 
     @staticmethod
     def leastConnections(queuelist: list[fogQueue.fogQueue], message: Message.Message):
@@ -30,7 +30,7 @@ class LoadBalencing:
                 index = i
 
         queuelist[index].addMessage(message)
-        print(queuelist)
+        #print(queuelist)
 
     # list is array of queue
     # messages is array of message

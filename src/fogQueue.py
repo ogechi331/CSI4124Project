@@ -1,6 +1,7 @@
 import numpy as np
 import heapq
 import Message
+import copy
 
 
 # Creates one Fog Queue that has multiple servers
@@ -25,6 +26,7 @@ class fogQueue():
 
     def addMessage(self, message: Message) -> None:
         # calculates the message's service time using an exponential distribution with the queue's mean service time
+        message.fog_arrival_time = copy.deepcopy(message.current_departure_time)
         message.fog_service_time = self.service_time.exponential(self.service_time_mean)
 
         ########Calculation of Wait Time ##########
@@ -38,7 +40,7 @@ class fogQueue():
         # calculated in main based on the message's departure time from the previous queue + lag time)
         message.fog_departure_time = message.fog_arrival_time + message.fog_service_time + message.fog_wait_time
         # sets the message's sorting criteria to the fog departure_time
-        message.current_departure_time = message.fog_departure_time
+        message.current_departure_time = copy.deepcopy(message.fog_departure_time)
         # sorts the event list
         heapq.heappush(self.event_list, message)
         # adds the message that left the eventlist into the processed list
@@ -56,7 +58,7 @@ class fogQueue():
                 self.processed.append(heapq.heappop(self.event_list))
 
         for i in range(0, len(self.processed)):
-            if self.processed[0].fog_departure_time >= current_time:
+            if self.processed[0].fog_departure_time <= current_time:
                 departing.append(self.processed.pop(0))
 
         return departing

@@ -1,6 +1,7 @@
 import numpy as np
 import heapq
 import Message
+import copy
 
 
 class CloudQueue():
@@ -23,6 +24,7 @@ class CloudQueue():
 
     def addMessage(self, message: Message) -> None:
         # calculates the message's service time using an exponential distribution with the queue's mean service time
+        message.cloud_arrival_time = copy.deepcopy(message.current_departure_time)
         message.cloud_service_time = self.service_time.exponential(self.service_time_mean)
 
         #########Calculation of Wait Time ###########
@@ -35,7 +37,7 @@ class CloudQueue():
         # calculates the departure time from the message's arrival time, service time, and wait time (arrival time is calculated in main based on the message's departure time from the previous queue + lag time)
         message.cloud_departure_time = message.cloud_arrival_time + message.cloud_service_time + message.cloud_wait_time
         # sets the message's sorting criteria to the cloud departure_time
-        message.current_departure_time = message.cloud_departure_time
+        message.current_departure_time = copy.deepcopy(message.cloud_departure_time)
 
         # sorts the event list
         heapq.heappush(self.event_list, message)
@@ -53,7 +55,7 @@ class CloudQueue():
                 self.processed.append(heapq.heappop(self.event_list))
 
         for i in range(0, len(self.processed)):
-            if self.processed[0].cloud_departure_time >= current_time:
+            if self.processed[0].cloud_departure_time <= current_time:
                 departing.append(self.processed.pop(0))
             # next_departure = self.queue[0] #peeks at the item at the top of the queue
             # if next_departure.cloud_departure_time <= current_time: #if the fog departure time is less or equal to current time, message leaves the system

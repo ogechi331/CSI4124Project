@@ -2,6 +2,7 @@ import heapq
 import numpy as np
 
 import Message
+import copy
 
 
 class EdgeQueue:
@@ -11,11 +12,12 @@ class EdgeQueue:
         self.queue = []  # List to hold messages in the
         self.serviceRate = serviceRate
 
-    def addMessage(self, time):
+    def addMessage(self, time: float):
         message = Message.Message(time)
+        
         if self.checkCapacity():
-            if len(self.queue) > 0:
-                message.edge_wait_time = (self.queue[0] - message.edge_arrival_time) 
+            if len(self.eventList) > 0:
+                message.edge_wait_time = (self.eventList[0].edge_departure_time - message.edge_arrival_time) 
                 self.queue.append(heapq.heappop(self.eventList))
             else:
                 message.edge_wait_time = 0
@@ -24,7 +26,7 @@ class EdgeQueue:
             message.edge_service_time = np.random.exponential(self.serviceRate)
             message.edge_departure_time = message.edge_arrival_time + message.edge_service_time + message.edge_wait_time  # Set departure time based on processing time
             # ensure the messages are ordered from lowest to greatest departure when adding messages
-            message.current_departure_time = message.edge_departure_time
+            message.current_departure_time = copy.deepcopy(message.edge_departure_time)
             heapq.heappush(self.eventList, message)
             return True  # Mess age added successfully
         else:  # Increase global dropout counter if queue is full
@@ -41,7 +43,7 @@ class EdgeQueue:
             if self.eventList[0].edge_departure_time <= current_time:
                 self.queue.append(heapq.heappop(self.eventList))
         for i in range(0, len(self.queue)):
-            if self.queue[0].edge_departure_time >= current_time:
+            if self.queue[0].edge_departure_time <= current_time:
                 departing.append(self.queue.pop(0))
         return departing
 

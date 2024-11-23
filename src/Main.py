@@ -6,6 +6,8 @@ import LoadBalencing
 import edgeQueue as edge
 import fogQueue
 
+import matplotlib.pyplot as plt
+
 
 class LoadBalancingType(enum.Enum):
     RoundRobin = 1
@@ -15,19 +17,19 @@ class LoadBalancingType(enum.Enum):
 
 def main():
     # User parameters Begins
-    time_step = 1
-    end_time = 10000
-    n_edgeServers = 3
-    edgeArrivalRates = [5, 5, 5]
-    edgeCapacities = [10, 10, 10]
-    edgeServiceRates = [10, 10, 10]
-    edgeDelay = [.05, .05, .05]
+    time_step = 0.01 #ms
+    end_time = 5000 #ms (will check if reached steady state)
+    n_edgeServers = 6
+    edgeArrivalRates = [0.01,0.01,0.01,0.01,0.01,0.01] #this is the value that will change with each test
+    edgeCapacities = [50,50,50,50,50,50]
+    edgeServiceRates = [5,5,5,5,5,5]
+    edgeDelay = [.05, .05, .05, 0.05, 0.05]
     fogDelayTime = 0.05
-    n_fogServers = [3, 3, 3]
-    n_fogQueues = 3
-    fogServiceRates = [10, 10, 10]
-    n_cloudServers = 4
-    cloudServiceRate = 10
+    n_fogServers = [2,2]
+    n_fogQueues = 1 #other parameter that was changed
+    fogServiceRates = [30,30]
+    n_cloudServers = 4 #what about number of queues? assumes 1 queue (which is right according to the paper)
+    cloudServiceRate = 50
     loadbalancingtype = 1
     # End User Parameters
     balance = LoadBalencing.LoadBalencing(0)
@@ -49,8 +51,8 @@ def main():
         edgeQueuesList.append((edge.EdgeQueue(edgeCapacities[i], edgeServiceRates[i]), i))
         edgeDelayQueue.append([])
 
-        # poisson or exponential?
-        nextEdgeArrival.append((np.random.exponential(1 / edgeArrivalRates[i]), i))
+        # assumes that the initial arrival time is exponentially distributed after 0
+        nextEdgeArrival.append([np.random.exponential(edgeArrivalRates[i]), i]) #this calculates the interarrival time, not the arrival time
 
     for i in range(0, n_fogQueues):
         fogQueueList.append(fogQueue.fogQueue(n_fogServers[i], fogServiceRates[i]))
@@ -62,37 +64,41 @@ def main():
         # message is class we call
 
         # handle message arriving at current simulation time
-        if nextEdgeArrival[0][0] >= simulation_time:
-            server_id = nextEdgeArrival[0][1]
+        for i in range(len(nextEdgeArrival)):
+            if nextEdgeArrival[i][0] <= simulation_time:
+                server_id = nextEdgeArrival[0][1]
 
-            # find where the corresponding edge Queue for the message currently is in the min heap
-            for i in range(0, len(edgeQueuesList)):
-                if edgeQueuesList[i][1] == server_id:
-                    if not edgeQueuesList[i][0].addMessage(simulation_time):
-                        dropout += 1
-                    # replace the min arrival with the next generated arrival time. Heap will auto balance itself
-                    heapq.heapreplace(nextEdgeArrival,
-                                      (np.random.exponential(1 / edgeArrivalRates[server_id]), server_id))
+                # find where the corresponding edge Queue for the message currently is in the min heap
+                for i in range(0, len(edgeQueuesList)):
+                    if edgeQueuesList[i][1] == server_id:
+                        if not edgeQueuesList[i][0].addMessage(simulation_time):
+                            dropout += 1
+                        # replace the min arrival with the next generated arrival time. Heap will auto balance itself
+                        prev = heapq.heappop(nextEdgeArrival)
+                        value = prev[0] + np.random.exponential(edgeArrivalRates[server_id])
+                        heapq.heappush(nextEdgeArrival, [value, server_id])
+                        #heapq.heapreplace(nextEdgeArrival,
+                        #                (nextEdgeArrival[0] + np.random.exponential(edgeArrivalRates[server_id]), server_id))
 
         # handle message departing at current simulation time
         for item in edgeQueuesList:
             messages = item[0].removeMessage(simulation_time)
             if messages:
                 for i in range(0, len(messages)):
-                    messages[i].incrementDeparture(edgeDelay[item[1]])
+                    messages[i].incrementDeparture(edgeDelay[item[1]-1])
                     edgeDelayQueue[item[1]].append(messages[i])
 
         # handle Messages leaving edge Delay Queue and use Load Balancing to add them to fog
         for messages in edgeDelayQueue:
             if messages:
                 # use Load Balancing to add to fog queue
-                if loadbalancingtype == LoadBalancingType.RoundRobin:
+                if loadbalancingtype == LoadBalancingType.RoundRobin.value:
                     for i in range(0, len(messages)):
-                        balance.roundRobin(fogQueueList, messages[i])
-                elif loadbalancingtype == LoadBalancingType.LeastConnections:
+                        balance.roundRobin(fogQueueList, messages.pop(0))
+                elif loadbalancingtype == LoadBalancingType.LeastConnections.value:
                     for i in range(0, len(messages)):
                         balance.leastConnections(fogQueueList, messages[i])
-                elif loadbalancingtype == LoadBalancingType.GeoLocation:
+                elif loadbalancingtype == LoadBalancingType.GeoLocation.value:
                     balance.geolocation(fogQueueList, messages)
             else:
                 continue
@@ -120,9 +126,61 @@ def main():
             for i in range(0, len(messages)):
                 cloudExitMessageList.append(messages[i])
 
+        
         simulation_time += time_step
 
     return cloudExitMessageList
 
 
-main()
+messages = main()
+
+print(len(messages))
+
+system_time = []
+
+edge_arrival_time = []
+edge_service_time = []
+edge_wait_time = []
+edge_departure_time = []
+
+fog_arrival_time = []
+fog_service_time = []
+fog_wait_time = []
+fog_departure_time = []
+
+cloud_arrival_time = []
+cloud_service_time = []
+cloud_wait_time = []
+cloud_departure_time = []
+
+for message in messages:
+    edge_arrival_time.append(message.edge_arrival_time)
+    edge_service_time.append(message.edge_service_time)
+    edge_wait_time.append(message.edge_wait_time)
+    edge_departure_time.append(message.edge_departure_time)
+
+    fog_arrival_time.append(message.fog_arrival_time)
+    fog_service_time.append(message.fog_service_time)
+    fog_wait_time.append(message.fog_wait_time)
+    fog_departure_time.append(message.fog_departure_time)
+
+    cloud_arrival_time.append(message.cloud_arrival_time)
+    cloud_service_time.append(message.cloud_service_time)
+    cloud_wait_time.append(message.cloud_wait_time)
+    cloud_departure_time.append(message.cloud_departure_time)
+
+    system_time.append(message.cloud_departure_time - message.edge_arrival_time)
+
+#now calculate all the statistics
+"""
+What to calculate:
+    1. determine system time (look for when this stabilizes)
+    1. determine when cloud departure time stabilizes (plot cloud departure time as histogram?)
+    2. average cloud departure time (graph)
+"""
+
+#cloud departure stabilization - plot the cloud departure by time
+plt.hist(system_time)
+plt.show()
+
+
