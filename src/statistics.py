@@ -4,13 +4,10 @@ import pandas as pd
 import scipy.stats as st
 
 
-load_balancing = "geolocating"
+load_balancing = "GeoLocating"
 
-print("here:")
 
-print(os.getcwd())
-
-directory = r"C:\Users\lchin\Documents\University\Year_5\Fall2024\CSI4124\project_final\CSI4124Project\src\Data"
+directory = r"C:\Users\lchin\Documents\University\Year_5\Fall2024\CSI4124\project_final\CSI4124Project\src\newData"
 
 files = os.listdir(directory)
 
@@ -18,15 +15,17 @@ files = os.listdir(directory)
 
 mrt_system_time = []
 mrt_edge_time = []
+edge_utilization = []
 mrt_fog_time = []
+fog_utilization = []
 mrt_cloud_time = []
+cloud_utilization = []
 dropout = []
 throughput = []
 
 arrival_rate = []
 
 for file in files:
-    print(file)
     if load_balancing.lower() in file.lower() and "calculation" in file.lower():
         df = pd.read_csv(directory +"/"+file)
 
@@ -34,6 +33,10 @@ for file in files:
         mrt_edge_time.append(df["MRT edge"][0])
         mrt_fog_time.append(df["MRT fog"][0])
         mrt_cloud_time.append(df["MRT cloud"][0])
+
+        edge_utilization.append(df["edge utilization"][0])
+        fog_utilization.append(df["fog utilization"][0])
+        cloud_utilization.append(df["cloud utilization"][0])
 
         dropout.append(df["dropout per time"][0])
         throughput.append(df["throughput per time"][0])
@@ -47,7 +50,10 @@ df = pd.DataFrame({
     "fog time": mrt_fog_time,
     "cloud time": mrt_cloud_time,
     "dropout": dropout,
-    "throughput": throughput
+    "throughput": throughput,
+    "edge utilization": edge_utilization,
+    "fog utilization": fog_utilization,
+    "cloud utilization": cloud_utilization
 })
 
 distinct_arrival_rates = set(arrival_rate)
@@ -79,6 +85,18 @@ CI_throughput = []
 PI_throughput = []
 
 arrival_rates = []
+
+average_edge_u = []
+CI_edge_u = []
+PI_edge_u = []
+
+average_fog_u = []
+CI_fog_u = []
+PI_fog_u = []
+
+average_cloud_u = []
+CI_cloud_u = []
+PI_cloud_u = []
 
 for rate in distinct_arrival_rates:
     subset = list(df.loc[df["arrival rate"] == rate]['arrival rate'].to_numpy())
@@ -171,36 +189,93 @@ for rate in distinct_arrival_rates:
     CI_dropout.append(dropout_time_CI)
     PI_dropout.append(dropout_time_PI)
 
+    #edge utilization
+    average_edge_u = list(df.loc[df["arrival rate"] == rate]['edge utilization'].to_numpy())
+    edge_u_mean = np.mean(average_edge_u)
+    edge_u_sd = np.std(average_edge_u, ddof=1)
+
+    t_value = st.t.ppf(0.95, len(average_edge_u)-1)
+
+    edge_u_time_CI = (edge_u_mean-t_value*edge_u_sd/np.sqrt(len(average_edge_u)), edge_u_mean+t_value*edge_u_sd/np.sqrt(len(average_edge_u)))
+    edge_u_time_PI = (edge_u_mean - t_value*edge_u_sd*np.sqrt(1 + (1/len(average_edge_u))), edge_u_mean + t_value*edge_u_sd*np.sqrt(1 + (1/len(average_edge_u))))
+
+    average_edge_u.append(edge_u_mean)
+    CI_edge_u.append(edge_u_time_CI)
+    PI_edge_u.append(edge_u_time_PI)
+
+    #fog utilization
+    average_fog_u = list(df.loc[df["arrival rate"] == rate]['fog utilization'].to_numpy())
+    fog_u_mean = np.mean(average_fog_u)
+    fog_u_sd = np.std(average_fog_u, ddof=1)
+
+    t_value = st.t.ppf(0.95, len(average_fog_u)-1)
+
+    fog_u_time_CI = (fog_u_mean-t_value*fog_u_sd/np.sqrt(len(average_fog_u)), fog_u_mean+t_value*fog_u_sd/np.sqrt(len(average_fog_u)))
+    fog_u_time_PI = (fog_u_mean - t_value*fog_u_sd*np.sqrt(1 + (1/len(average_fog_u))), fog_u_mean + t_value*fog_u_sd*np.sqrt(1 + (1/len(average_fog_u))))
+
+    average_fog_u.append(fog_u_mean)
+    CI_fog_u.append(fog_u_time_CI)
+    PI_fog_u.append(fog_u_time_PI)
+
+    #cloud utilization
+    average_cloud_u = list(df.loc[df["arrival rate"] == rate]['cloud utilization'].to_numpy())
+    cloud_u_mean = np.mean(average_cloud_u)
+    cloud_u_sd = np.std(average_cloud_u, ddof=1)
+
+    t_value = st.t.ppf(0.95, len(average_cloud_u)-1)
+
+    cloud_u_time_CI = (cloud_u_mean-t_value*cloud_u_sd/np.sqrt(len(average_cloud_u)), cloud_u_mean+t_value*cloud_u_sd/np.sqrt(len(average_cloud_u)))
+    cloud_u_time_PI = (cloud_u_mean - t_value*cloud_u_sd*np.sqrt(1 + (1/len(average_cloud_u))), cloud_u_mean + t_value*cloud_u_sd*np.sqrt(1 + (1/len(average_cloud_u))))
+
+    average_cloud_u.append(cloud_u_mean)
+    CI_cloud_u.append(cloud_u_time_CI)
+    PI_cloud_u.append(cloud_u_time_PI)
+
+
+
+
 
 #save data
 
 calculations = pd.DataFrame({
 
-    "system time": [average_system_time],
-    "CI system time":[CI_system_time],
-    "PI system time":[PI_system_time],
+    "system time": average_system_time,
+    "CI system time":CI_system_time,
+    "PI system time":PI_system_time,
 
-    "edge time":[average_edge_time],
-    "CI edge time": [CI_edge_time],
-    "PI edge time": [PI_edge_time],
+    "edge time":average_edge_time,
+    "CI edge time": CI_edge_time,
+    "PI edge time": PI_edge_time,
 
-    "fog time": [average_fog_time],
-    "CI fog time": [CI_fog_time],
-    "PI fog time": [PI_fog_time],
+    "fog time": average_fog_time,
+    "CI fog time": CI_fog_time,
+    "PI fog time": PI_fog_time,
 
-    "cloud time": [average_cloud_time],
-    "CI cloud time": [CI_cloud_time],
-    "PI cloud time": [PI_cloud_time],
+    "cloud time": average_cloud_time,
+    "CI cloud time": CI_cloud_time,
+    "PI cloud time": PI_cloud_time,
 
-    "dropout": [average_dropout],
-    "CI dropout": [CI_dropout],
-    "PI dropout": [PI_dropout],
+    "dropout": average_dropout,
+    "CI dropout": CI_dropout,
+    "PI dropout": PI_dropout,
 
-    "throughput": [average_throughput],
-    "CI throughput": [CI_throughput],
-    "PI throughput": [PI_throughput],
+    "throughput":average_throughput,
+    "CI throughput": CI_throughput,
+    "PI throughput": PI_throughput,
 
-    "arrival rate": [arrival_rates]
+    "edge utilization": average_edge_u,
+    "CI edge utilization": CI_edge_u,
+    "PI edge utilization": PI_edge_u,
+
+    "fog utilization": average_fog_u,
+    "CI fog utilization": CI_fog_u,
+    "PI fog utilization": PI_fog_u,
+
+    "cloud utilization": average_cloud_u,
+    "CI cloud utilization": CI_cloud_u,
+    "PI cloud utilization": PI_cloud_u,
+
+    "arrival rate": arrival_rates
 })
 
 calculations.to_csv("aggregated data from repetitions for " + load_balancing + ".csv")

@@ -11,6 +11,7 @@ class EdgeQueue:
         self.eventList = []
         self.queue = []  # List to hold messages in the
         self.serviceRate = serviceRate
+        self.server_time = 0
 
     def addMessage(self, time: float):
         message = Message.Message(time)
@@ -44,8 +45,14 @@ class EdgeQueue:
                 self.queue.append(heapq.heappop(self.eventList))
         for i in range(0, len(self.queue)):
             if self.queue[0].edge_departure_time <= current_time:
+                self.server_time += self.queue[0].edge_service_time
                 departing.append(self.queue.pop(0))
         return departing
+    
+    def getServerTime(self, current_time):
+        current_item = self.eventList.pop(0)
+        self.server_time += max(0,(current_item.edge_service_time - (current_item.edge_departure_time - current_time)))
+        return self.server_time
 
     def __gt__(self, other):
         """Compare two EdgeQueue objects based on the next message's departure time."""

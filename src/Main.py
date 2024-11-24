@@ -16,12 +16,12 @@ class LoadBalancingType(enum.Enum):
     GeoLocation = 3
 
 
-def main():
+def main(arrival_rate):
     # User parameters Begins
-    time_step = 0.05 #ms
+    time_step = arrival_rate #ms
     end_time = 5000 #ms (will check if reached steady state)
     n_edgeServers = 6
-    edgeArrivalRates = [0.05,0.05,0.05,0.05,0.05,0.05] #this is the value that will change with each test
+    edgeArrivalRates = [arrival_rate,arrival_rate,arrival_rate,arrival_rate,arrival_rate,arrival_rate] #this is the value that will change with each test
     edgeCapacities = [50,50,50,50,50,50]
     edgeServiceRates = [5,5,5,5,5,5]
     edgeDelay = [.05, .05, .05, 0.05, 0.05]
@@ -130,19 +130,28 @@ def main():
         
         simulation_time += time_step
 
-    return cloudExitMessageList, dropout
+    edge_server_time = 0
+
+    for queue in edgeQueuesList:
+        edge_server_time += queue[0].getServerTime(simulation_time)
+    fog_server_time = 0
+    for queue in fogQueueList:
+        fog_server_time += queue.getServerTime(simulation_time)
+    cloud_server_time = cloudQueue.getServerTime(simulation_time)
+
+    return cloudExitMessageList, dropout, edge_server_time, fog_server_time, cloud_server_time
 
 
 total_time = 5000
 edge_queues = 6
-fog_queues = 2
-cloud_queues = 1
+fog_queues = 2  *2 #number of queues multipled by the number of servers at queue
+cloud_queues = 1 *4 #number of queues multiplied by the number of servers at queue
 
 i = 5
 test = "GeoLocating"
 arrival_rate = 0.05
 
-messages, dropout = main()
+messages, dropout, edge_server_time, fog_server_time, cloud_server_time = main(arrival_rate)
 
 
 
@@ -259,9 +268,9 @@ cloud_time_PI = (average_cloud_time - t_value*sd_cloud_time*np.sqrt(1 + (1/len(c
 
 # Utilization
 
-edge_utilization = total_edge_service_time/(edge_queues*total_time)
-fog_utilization = total_fog_service_time/(fog_queues*total_time)
-cloud_utilization = total_cloud_service_time/(cloud_queues*total_time)
+edge_utilization = edge_server_time/(edge_queues*total_time)
+fog_utilization = fog_server_time/(fog_queues*total_time)
+cloud_utilization = cloud_server_time/(cloud_queues*total_time)
 
 #Dropout
 
@@ -300,14 +309,17 @@ calculations = pd.DataFrame({
     "MRT edge": [average_edge_time],
     "C.I MRT edge": [edge_time_CI],
     "P.I MRT edge": [edge_time_PI],
+    "edge utilization": [edge_utilization],
 
     "MRT fog": [average_fog_time],
     "C.I MRT fog": [fog_time_CI],
     "P.I MRT fog": [fog_time_PI],
+    "fog utilization": [fog_utilization],
 
     "MRT cloud": [average_cloud_time],
     "C.I MRT cloud": [cloud_time_CI],
     "P.I MRT cloud": [cloud_time_PI],
+    "cloud utilization": [cloud_utilization],
 
     "dropout per time": [average_dropout],
     "throughput per time": [average_throughput],

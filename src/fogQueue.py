@@ -23,6 +23,7 @@ class fogQueue():
         self.service_time_mean = service_time_mean
         self.processed = processed
         self.event_list = event_list
+        self.server_time = 0
 
     def addMessage(self, message: Message) -> None:
         # calculates the message's service time using an exponential distribution with the queue's mean service time
@@ -59,9 +60,16 @@ class fogQueue():
 
         for i in range(0, len(self.processed)):
             if self.processed[0].fog_departure_time <= current_time:
+                self.server_time += self.processed[0].fog_service_time
                 departing.append(self.processed.pop(0))
 
         return departing
+    
+    def getServerTime(self, current_time):
+        for i in range(0, len(self.event_list)):
+            current_item = self.event_list.pop(0)
+            self.server_time += max(0,(current_item.fog_service_time - (current_item.fog_departure_time - current_time)))
+        return self.server_time
 
     def __len__(self):
         return len(self.event_list) + len(self.processed)

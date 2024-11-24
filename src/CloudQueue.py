@@ -21,6 +21,7 @@ class CloudQueue():
         self.service_time_mean = service_time_mean
         self.processed = processed
         self.event_list = event_list
+        self.server_time = 0
 
     def addMessage(self, message: Message) -> None:
         # calculates the message's service time using an exponential distribution with the queue's mean service time
@@ -56,10 +57,14 @@ class CloudQueue():
 
         for i in range(0, len(self.processed)):
             if self.processed[0].cloud_departure_time <= current_time:
+                self.server_time += self.processed[0].cloud_service_time
                 departing.append(self.processed.pop(0))
-            # next_departure = self.queue[0] #peeks at the item at the top of the queue
-            # if next_departure.cloud_departure_time <= current_time: #if the fog departure time is less or equal to current time, message leaves the system
-            #    depart = heapq.heappop(self.queue)
-            #    departing.append(depart)
+            
 
         return departing
+    
+    def getServerTime(self, current_time):
+        for i in range(0, len(self.event_list)):
+            current_item = self.event_list.pop(0)
+            self.server_time += max(0,(current_item.cloud_service_time - (current_item.cloud_departure_time - current_time)))
+        return self.server_time
